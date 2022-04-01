@@ -1,1 +1,0 @@
-,jidde,Jiddes-Ubuntu,01.04.2022 10:50,file:///home/jidde/.config/libreoffice/4;

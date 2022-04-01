@@ -17,7 +17,8 @@ Through regular meetings, where every team member is involved, our plan is to jo
 **What is our usual communication plan?**
 
 The plan is to utilize Discord for communication within the team. Both voice and text communication within the group occurs in Discord. If one or more team members miss out on information, then the other team members will communicate the most vital information/summary to that team member.
-How will we solve conflicts?
+
+**How will we solve conflicts?**
 
 As of yet, no conflicts have occured. The priority of our group is to have ‘openness’ and ‘transparency’ between all team members. Each member is free to voice their opinions, concerns, and views, free of conflicts. We expect each and every team member to act in a respectful manner towards another team member.
 In the unexpected case where conflicts do occur, then a discussion between all team members will take place, and where every team member is able to voice their opinion. 

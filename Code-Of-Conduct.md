@@ -16,9 +16,11 @@ Through regular meetings, where every team member is involved, our plan is to jo
 
 **What is our usual communication plan?**
 
-The plan is to utilize Discord for communication within the team. Both voice and text communication within the group occurs in Discord. If one or more team members miss out on information, then the other team members will communicate the most vital information/summary to that team member.
+The plan is to utilize Discord for communication within the team. Both voice and text communication within the group occurs in Discord. If one or more team members miss out on information, then the other team members will communicate the most vital information/summary to that team member. Communication and collaboration occurs primarily online, but in the cases where on-site collaboration is preferred by the team members, or where online collaboration becomes difficult to accomplish, then the collaboration may be shifted towards on-site collaboration, with the possibility to discuss whether any temporary or permanent changes would be made. Currently, on-site collaboration will play a minor role for our group, with the exception for cases mentioned above.
 
 **How will we solve conflicts?**
+
+In order to prevent conflicts from occuring, each team member agrees to respect one another, and should avoid conflicts and hostile behavior towards any other team member. By showing respect, and allowing all team members to voice their opinions and concerns, the likelihood of conflicts may be considered reduced to a minimum. As mentioned below, our group prioritizes openness, which includes the ability to speak out on cases of unfair treatment/hostility. Our utmost priority is to make sure that the team members enjoy collaborating together, which also means that our utmost priority is to treat everyone with respect.
 
 As of yet, no conflicts have occured. The priority of our group is to have ‘openness’ and ‘transparency’ between all team members. Each member is free to voice their opinions, concerns, and views, free of conflicts. We expect each and every team member to act in a respectful manner towards another team member.
 In the unexpected case where conflicts do occur, then a discussion between all team members will take place, and where every team member is able to voice their opinion. 

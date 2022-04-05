@@ -18,7 +18,7 @@ To be added.
 The system will be able to detect cones and detemine needed steering for the wheels. 
 
 ## Roadmap
-Our roadmap is somewhat described by the planned tasks we have documented on our Trello board.
+Our roadmap is somewhat described by the planned tasks we have documented on our [Trello board](https://trello.com/b/qO0KZTiw/dit638-project-group-02).
 
 
 ## Authors and acknowledgment

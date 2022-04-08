@@ -49,6 +49,8 @@ release:
   only:
     refs:
       - tags
+    variables:
+      - $CI_COMMIT_TAG =~ /^v(\d+\.)?(\d+\.)?(\*|\d+)$/
   tags:
     - docker-build
   stage: deploy

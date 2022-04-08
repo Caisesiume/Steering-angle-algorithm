@@ -45,6 +45,10 @@ build-and-test:
 
 # This section describes what shall be done to deploy artefacts from the project.
 release:
+  when: on_success
+  only:
+    refs:
+      - tags
   tags:
     - docker-build
   stage: deploy

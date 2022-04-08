@@ -35,6 +35,8 @@ before_script:
 
 # This section describes what shall be done to build and test the project.
 build-and-test:
+  only: 
+    - branches
   tags:
     - docker-build
   stage: build

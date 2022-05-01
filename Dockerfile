@@ -32,9 +32,9 @@ RUN apt-get install -y --no-install-recommends \
         libopencv-dev
 
 # Include this source tree and compile the sources
-ADD . /opt/sources/src
-WORKDIR /opt/sources/src
-RUN cd /opt/sources/src && \
+ADD . /opt/sources
+WORKDIR /opt/sources
+RUN cd /opt/sources && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/tmp .. && \

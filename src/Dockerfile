@@ -34,7 +34,8 @@ RUN apt-get install -y --no-install-recommends \
 # Include this source tree and compile the sources
 ADD . /opt/sources/src
 WORKDIR /opt/sources/src
-RUN mkdir build && \
+RUN cd /opt/sources/src && \
+    mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/tmp .. && \
     make && make install

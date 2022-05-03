@@ -117,7 +117,9 @@ int32_t main(int32_t argc, char **argv) {
                 
                 
                 
-                   
+                //HSV values reference: https://www.codespeedy.com/splitting-rgb-and-hsv-values-in-an-image-using-opencv-python/
+                //Solution partly inspired by: https://stackoverflow.com/questions/9018906/detect-rgb-color-interval-with-opencv-and-c
+                //AND: https://solarianprogrammer.com/2015/05/08/detect-red-circles-image-using-opencv/
 
                 
                 //Cone color detection
@@ -135,6 +137,7 @@ int32_t main(int32_t argc, char **argv) {
     cv::cvtColor(img, hsvIMG, cv::COLOR_BGR2HSV);
 
     cv::Mat justYellowColor;
+    
     inRange(hsvIMG, cv::Scalar(15,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
 
 

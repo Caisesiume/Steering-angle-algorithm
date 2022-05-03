@@ -112,7 +112,6 @@ int32_t main(int32_t argc, char **argv) {
                // cv::putTest(img, ("Current Time: " + (timeNow->tm_year) + '-' + (timeNow->tm_mon +1) + '-' + (timeNow->tm_mday) + ' ' + (timeNow->tm_hour) + ':' + (timeNow->tm_min) + ':' + (timeNow->tm_sec), (10, 100), FONT_HERSHEY_PLAIN,1, (210, 155, 155), 4, cv::LINE_8));
 
                // cv::putText(img, timeVar, cv::Point(20,10), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
-                //cv::putText(img, "Hansen, Robin", cv::Point(20, 30), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
                // cv::putText(img, sampleTimeVar, cv::Point(20, 50), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
                 
                 

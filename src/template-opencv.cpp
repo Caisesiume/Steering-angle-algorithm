@@ -25,6 +25,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <ctime>
 
+//include due to features changed from highgui.hpp
+/*
+#include "opencv2/imgcodecs.hpp"
+*/
+
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{1};
     // Parse the command line parameters as we require the user to specify some mandatory information on startup.
@@ -85,156 +90,75 @@ int32_t main(int32_t argc, char **argv) {
                     img = wrapped.clone();
                 }
                 // TODO: Here, you can add some code to check the sampleTimePoint when the current frame was captured.
-                std::time_t currentTime = std::time(0);
-                std::tm* timeNow = std::localtime(&currentTime);
+                //std::time_t currentTime = std::time(0);
+                //std::tm* timeNow = std::localtime(&currentTime);
                 
-                std::string timeVar = "Current Time: "+std::to_string(timeNow->tm_year +1900)+'-'+std::to_string(timeNow->tm_mon +1)+'-'+std::to_string(timeNow->tm_mday)+'T'+std::to_string(timeNow->tm_hour)+':'+std::to_string(timeNow->tm_min)+':'+std::to_string(timeNow->tm_sec)+'Z';
+                //std::string timeVar = "Current Time: "+std::to_string(timeNow->tm_year +1900)+'-'+std::to_string(timeNow->tm_mon +1)+'-'+std::to_string(timeNow->tm_mday)+'T'+std::to_string(timeNow->tm_hour)+':'+std::to_string(timeNow->tm_min)+':'+std::to_string(timeNow->tm_sec)+'Z';
                 //std::string dateVar = std::to_string(timeNow->tm_year) + '-' + std::to_string(timeNow->tm_mon) + '-' + std::to_string(timeNow->tm_mday);
 
-                std::cout << timeVar << std::endl;
+               // std::cout << timeVar << std::endl;
 
                 //std::cout << "Current Time: " << (timeNow->tm_year) << '-' << (timeNow->tm_mon +1) << '-' << (timeNow->tm_mday) << ' ' << (timeNow->tm_hour) << ':' << (timeNow->tm_min) << ':' << (timeNow->tm_sec) << std::endl;
-                std::pair<bool, cluon::data::TimeStamp > pair = sharedMemory->getTimeStamp();
+                /*std::pair<bool, cluon::data::TimeStamp > pair = sharedMemory->getTimeStamp();
                     cluon::data::TimeStamp sampleT = pair.second;
                     int64_t tStamp = cluon::time::toMicroseconds(sampleT);
                     std::string ts = std::to_string(tStamp);
                     std::string sampleTimeVar = "Sample Time: " + ts;
-                    std::cout << "Sample Time: " << ts << std::endl;
+                    std::cout << "Sample Time: " << ts << std::endl;*/ //commented out for performance
                 sharedMemory->unlock();
 
                 // TODO: Do something with the frame.
                 //cv::putText(img, label, Point(20, 20), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(0, 170, 0), 2.0);
                // cv::putTest(img, ("Current Time: " + (timeNow->tm_year) + '-' + (timeNow->tm_mon +1) + '-' + (timeNow->tm_mday) + ' ' + (timeNow->tm_hour) + ':' + (timeNow->tm_min) + ':' + (timeNow->tm_sec), (10, 100), FONT_HERSHEY_PLAIN,1, (210, 155, 155), 4, cv::LINE_8));
 
-                cv::putText(img, timeVar, cv::Point(20,10), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
+               // cv::putText(img, timeVar, cv::Point(20,10), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
                 //cv::putText(img, "Hansen, Robin", cv::Point(20, 30), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
-                cv::putText(img, sampleTimeVar, cv::Point(20, 50), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
+               // cv::putText(img, sampleTimeVar, cv::Point(20, 50), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
                 
                 
                 
                 
-                    //attempt 2
-                /*
-                    cv::Mat target = cv::imread("target.png");
-                    cv::Mat background;
-                    target.copyTo(background);
-
-                    cv::cvtColor(target, target, cv::COLOR_BGR2HSV);
-
-                    cv::Mat mask;
-                    cv::inRange(target, cv::Scalar(30, 85, 183), cv::Scalar(44, 175, 209), mask);
-
-                    std::vector<std::vector<cv::Point >> contours;
-                    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-                    cv::drawContours(background, contours, -1, (0, 255, 0), 3);
-
-                    cv::imshow("contours", background);
-                    //cv::imshow("yellow", mask);
-                    // end attempt 2
-                */
-
-                 //attempt 1 - picture
-                //target pic
-                /*
-                cv::Mat target = cv::imread("target.png");
-                cv::cvtColor(target, target, cv::COLOR_BGR2HSV);
-
-                cv::Mat mask;
-                cv::inRange(target, cv::Scalar(30, 85, 183), cv::Scalar(44, 175, 209), mask);
-                */
-                // end target pic
-
-
-
-               /* 
-                //attempt 1 - video feed
-
-                cv::Scalar lowValue = cv::Scalar(26, 233, 182);
-                cv::Scalar highValue = cv::Scalar(53, 229, 177);
-
-                cv::Mat copyOfImg;
-                img.copyTo(copyOfImg);
-                cv::cvtColor(img, img, cv::COLOR_BGR2HSV);
-
-
-                cv::Mat justYellowColor;
-                cv::inRange(img, lowValue, highValue, justYellowColor);
-                
-
-                //cv::inRange(img, cv::Scalar(250, 250, 200), cv::Scalar(250, 230, 0), justYellowColor); //duplicate
-                std::vector < std::vector < cv::Point >> contours;
-                cv::findContours(justYellowColor, contours, cv::RET_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-                //cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE); //<-- Causes build issues
-                
-                
-                cv::drawContours(img, contours, -1, cv::Scalar(0, 255, 0), 3); //<-- Draw contours, not rects
+                   
 
                 
-                for (size_t i = 0; i < contours.size(); ++i){
-                    cv::Rect boundRect = cv::boundingRect(contours[i]);
-                    cv::rectangle(img, boundRect.tl(), boundRect.br(), (0,0,0), 3);
-                }
-
-
-
-                cv::imshow("copyOfImg", copyOfImg);
-                cv::imshow("contours", img);
+                //Cone color detection
                 
-                
-                //cv::imshow("justYellow", justYellowColor); //remove comment
-                // end attempt 1
-*/
-                
-
-
-
-                
-                //Attempt 3
                 using namespace cv;
                 using namespace std;
-                //Read input image in gray scale
-    //Mat src;
-    //target = imread("target.jpg", CV_LOAD_IMAGE_COLOR); //<-- If loading image
-
-
-    //Mat gray;
-    //cvtColor(src, gray, CV_BGR2GRAY); //<-- Gray instead of HSV
-    //threshold(gray, gray,200, 255,THRESH_BINARY_INV); //Threshold the gray
-    //imshow("gray",gray);int largest_area=0;
-    //int largest_contour_index=0;
+                
     
-    cv::cvtColor(img, img, cv::COLOR_BGR2HSV);
+    cv::Mat originalImg;
+    img.copyTo(originalImg);
 
-    Mat justYellowColor;
-    //inRange(img, cv::Scalar(30, 85, 183), cv::Scalar(44, 175, 209), justYellowColor);
-    inRange(img, cv::Scalar(0,0,0), cv::Scalar(255, 255, 255), justYellowColor); //For testing
+    cv::Mat hsvIMG;
+    img.copyTo(hsvIMG);
 
-    Rect bounding_rect;
-    vector<vector<Point>> contours; // Vector for storing contour
-    vector<Vec4i> hierarchy;
+    cv::cvtColor(img, hsvIMG, cv::COLOR_BGR2HSV);
+
+    cv::Mat justYellowColor;
+    inRange(hsvIMG, cv::Scalar(15,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
+
+
+    cv::Rect bounding_rect;
+    vector<vector<cv::Point>> contours; // Vector for storing contour
+    //vector<Vec4i> hierarchy;
     //findContours( justYellowColor, contours, hierarchy, CV_RETR_FLOODFILL, CHAIN_APPROX_SIMPLE );
-    findContours(justYellowColor, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(justYellowColor, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
     // iterate through each contour.
     for( unsigned int i = 0; i< contours.size(); i++ )
     {          
             // Find the bounding rectangle for biggest contour
-            bounding_rect=boundingRect(contours[i]);
+            bounding_rect=cv::boundingRect(contours[i]);
         
     }
-    Scalar color( 255,255,255);  // color of the contour in the
-    //Draw the contour and rectangle
-    //drawContours( img, contours, color, CV_FILLED,8,hierarchy, 3); //<-- Tried, produces error
-    drawContours(img, contours, -1, Scalar(0, 255, 0), 3);
-    rectangle(img, bounding_rect,  Scalar(0,255,0),2, 8,0);
-    imshow( "Attempt3", img );    
+    //Scalar color( 255,255,255);  // color of the contour in the
+    cv::drawContours(img, contours, -1, cv::Scalar(0, 255, 0), 3);
+    cv::rectangle(img, bounding_rect,  cv::Scalar(0,255,0),2, 8,0);
+    cv::imshow( "Original Img", originalImg ); //<--Original Img(not changed)
+    cv::imshow("justYellowColor", justYellowColor); //<-- White if within HSV values, black if not.
+    //cv::imshow( "Attempt3", img ); //<-- duplicate of tmp/img
+    //cv::imshow("hsvImg", hsvIMG); //<-- HSV(pink/purple) video feed
 
-
-
-    
-
-
-                //
 
 
                 // Example: Draw a red rectangle and display image.
@@ -243,7 +167,15 @@ int32_t main(int32_t argc, char **argv) {
                 // If you want to access the latest received ground steering, don't forget to lock the mutex:
                 {
                     std::lock_guard<std::mutex> lck(gsrMutex);
-                    std::cout << "main: groundSteering = " << gsr.groundSteering() << std::endl;
+                 //   std::cout << "main: groundSteering = " << gsr.groundSteering() << std::endl;
+
+
+                 /* //Maybe useful later on
+                    for (size_t i = 0; i < contours.size(); ++i){
+                    cv::Rect boundRect = cv::boundingRect(contours[i]);
+                    cv::rectangle(img, boundRect.tl(), boundRect.br(), (0,0,0), 3);
+                }
+                 */
                 }
 
                 // Display image on your screen.

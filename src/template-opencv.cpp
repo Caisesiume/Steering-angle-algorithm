@@ -134,30 +134,46 @@ int32_t main(int32_t argc, char **argv) {
     cv::Mat hsvIMG;
     img.copyTo(hsvIMG);
 
+
+    //Draw box around unnecessary part of car(to avoid conflicts with inrange below)
+        cv::rectangle(img, cv::Point(150, 385), cv::Point(500, 500), cv::Scalar(0,0,0), CV_FILLED);
+    //Draw box in region above cones, to avoid conflicts with irrelevant objects.
+        cv::rectangle(img, cv::Point(0,0), cv::Point(650, 250), cv::Scalar(0,0,0), CV_FILLED);
+    
+
     cv::cvtColor(img, hsvIMG, cv::COLOR_BGR2HSV);
 
     cv::Mat justYellowColor;
+    cv::Mat justBlueColor;
     
     inRange(hsvIMG, cv::Scalar(15,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
+    inRange(hsvIMG, cv::Scalar(80,125,8), cv::Scalar(135, 255, 210), justBlueColor); //Blue(low, high) - Blue cones
+        
 
-
-    cv::Rect bounding_rect;
-    vector<vector<cv::Point>> contours; // Vector for storing contour
+    cv::Rect bounding_rect; //z-- Not used atm
+    vector<vector<cv::Point>> yellowcontours; // Vector for storing yellow contours
+    vector<vector<cv::Point>> bluecontours; // Vector for storing blue contours
     //vector<Vec4i> hierarchy;
     //findContours( justYellowColor, contours, hierarchy, CV_RETR_FLOODFILL, CHAIN_APPROX_SIMPLE );
-    cv::findContours(justYellowColor, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    // iterate through each contour.
-    for( unsigned int i = 0; i< contours.size(); i++ )
-    {          
+    cv::findContours(justBlueColor, yellowcontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(justYellowColor, bluecontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    
+   /* for( unsigned int i = 0; i< contours.size(); i++ )
+    {         
+       // double area = contourArea(contours[i]); //z-- idk if works, test later
+       // if (area > 0) {
             // Find the bounding rectangle for biggest contour
-            bounding_rect=cv::boundingRect(contours[i]);
+            bounding_rect=cv::boundingRect(yellowcontours[i]);
+            bounding_rect=cv::boundingRect(bluecontours[i]);
+       // }
         
-    }
-    //Scalar color( 255,255,255);  // color of the contour in the
-    cv::drawContours(img, contours, -1, cv::Scalar(0, 255, 0), 3);
-    cv::rectangle(img, bounding_rect,  cv::Scalar(0,255,0),2, 8,0);
+    }*/
+    cv::drawContours(img, yellowcontours, -1, cv::Scalar(0, 255, 0), 3);
+    cv::drawContours(img, bluecontours, -1, cv::Scalar(0, 255, 0), 3);
+    //cv::rectangle(img, bounding_rect,  cv::Scalar(0,255,0),2, 8,0);
     cv::imshow( "Original Img", originalImg ); //<--Original Img(not changed)
-    cv::imshow("justYellowColor", justYellowColor); //<-- White if within HSV values, black if not.
+    cv::imshow("justYellowColor", justYellowColor); //<-- (Just yellow)White if within HSV values, black if not.
+    cv::imshow("justBlueColor", justBlueColor); //<-- (Just blue)White if within HSV values, black if not.
     //cv::imshow( "Attempt3", img ); //<-- duplicate of tmp/img
     //cv::imshow("hsvImg", hsvIMG); //<-- HSV(pink/purple) video feed
 

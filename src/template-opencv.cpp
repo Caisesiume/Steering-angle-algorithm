@@ -50,6 +50,10 @@ int32_t main(int32_t argc, char **argv) {
         const uint32_t HEIGHT{static_cast<uint32_t>(std::stoi(commandlineArguments["height"]))};
         const bool VERBOSE{commandlineArguments.count("verbose") != 0};
 
+
+
+
+
         // Attach to the shared memory.
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
         constexpr bool AUTO_REWIND{false};
@@ -63,6 +67,8 @@ int32_t main(int32_t argc, char **argv) {
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             opendlv::proxy::GroundSteeringRequest gsr;
+	    opendlv::proxy::VoltageReading infrared;
+	    std::mutex infraredMutex;	
             std::mutex gsrMutex;
             auto onGroundSteeringRequest = [&gsr, &gsrMutex](cluon::data::Envelope &&env){
                 // The envelope data structure provide further details, such as sampleTimePoint as shown in this test case:
@@ -71,9 +77,17 @@ int32_t main(int32_t argc, char **argv) {
                 gsr = cluon::extractMessage<opendlv::proxy::GroundSteeringRequest>(std::move(env));
                 std::cout << "lambda: groundSteering = " << gsr.groundSteering() << std::endl;
             };
-
             od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
+	
 
+	///Added Code for infrared
+auto onVoltageReading= [&infrared, &infraredMutex](cluon::data::Envelope &&env){
+	std::lock_guard<std::mutex> lck(infraredMutex);
+	infrared= cluon::extractMessage<opendlv::proxy::VoltageReading>(std::move(env));
+	std::cout << "lambda: volatgeReading = " << infrared.voltage()<<","<<env.senderStamp()<< std::endl;	
+};
+
+od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning()) {
                 // OpenCV data structure to hold an image.

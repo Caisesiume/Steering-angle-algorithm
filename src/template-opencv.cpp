@@ -27,8 +27,39 @@
 // Include to hadle time 
 #include <ctime>
 
+auto calculateSteering(float rightIR, float leftIR, float yellowCones, float blueCones, float steering) {
+    float incrementSteering = 0.029088;
+    if (steering > 0) {
+        steering = steering - incrementSteering;
+    }
+    if (steering < 0) {
+        steering = steering + incrementSteering;
+    }
+    if (rightIR <= 0.005) {
+        steering = steering + (incrementSteering*3);
+    }
+    if (leftIR <= 0.005) {
+        steering = steering - (incrementSteering*3);
+    }
+    if(yellowCones == 0) {
+        steering = (-0.290888);
+    }
+    if(blueCones == 0) {
+        steering = 0.290888;
+    }
+    std::cout << "steering is: "<< steering <<std::endl;
+    return steering; 
+}
+
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{1};
+    float yellowCones = 6;
+    float blueCones = 0;
+    float leftIR; 
+    float rightIR;
+    float steering = 1;
+
+
     // Parse the command line parameters as we require the user to specify some mandatory information on startup.
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
     if ( (0 == commandlineArguments.count("cid")) ||
@@ -50,6 +81,10 @@ int32_t main(int32_t argc, char **argv) {
         const uint32_t HEIGHT{static_cast<uint32_t>(std::stoi(commandlineArguments["height"]))};
         const bool VERBOSE{commandlineArguments.count("verbose") != 0};
 
+
+
+
+
         // Attach to the shared memory.
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
         constexpr bool AUTO_REWIND{false};
@@ -63,6 +98,8 @@ int32_t main(int32_t argc, char **argv) {
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             opendlv::proxy::GroundSteeringRequest gsr;
+	    opendlv::proxy::VoltageReading infrared;
+	    std::mutex infraredMutex;	
             std::mutex gsrMutex;
             auto onGroundSteeringRequest = [&gsr, &gsrMutex](cluon::data::Envelope &&env){
                 // The envelope data structure provide further details, such as sampleTimePoint as shown in this test case:
@@ -71,8 +108,31 @@ int32_t main(int32_t argc, char **argv) {
                 gsr = cluon::extractMessage<opendlv::proxy::GroundSteeringRequest>(std::move(env));
                 std::cout << "lambda: groundSteering = " << gsr.groundSteering() << std::endl;
             };
-
             od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
+	
+
+	///Added Code for infrared
+auto onVoltageReading= [&infrared, &infraredMutex, &rightIR, &leftIR, &yellowCones, &blueCones, &steering](cluon::data::Envelope &&env){
+	std::lock_guard<std::mutex> lck(infraredMutex);
+	infrared= cluon::extractMessage<opendlv::proxy::VoltageReading>(std::move(env));
+	std::cout << "lambda: volatgeReading, "<< "ID: "<< env.senderStamp()<< " = " << infrared.voltage()<< std::endl;	
+    if(env.senderStamp() == 3) {
+        rightIR = infrared.voltage();
+    } else if (env.senderStamp() == 1) {
+        leftIR = infrared.voltage();
+    }
+    steering = calculateSteering(rightIR, leftIR, yellowCones, blueCones, steering);
+};
+
+// senderstamp3, lowest == 0.004835165
+// senderstamp1, lowest == 0.005274725
+// maxsteering = +/- 0.290888
+// Minus steering = Right
+// Plus steering = Left
+
+od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
+
+
 
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning()) {

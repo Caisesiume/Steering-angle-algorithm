@@ -144,19 +144,54 @@ int32_t main(int32_t argc, char **argv) {
     cv::cvtColor(img, hsvIMG, cv::COLOR_BGR2HSV);
 
     cv::Mat justYellowColor;
+    cv::Mat justYellowColor2;
     cv::Mat justBlueColor;
     
-    inRange(hsvIMG, cv::Scalar(15,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
+    inRange(hsvIMG, cv::Scalar(12,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
+    inRange(hsvIMG, cv::Scalar(0,255,255), cv::Scalar(10, 255, 255), justYellowColor2);
     inRange(hsvIMG, cv::Scalar(80,125,8), cv::Scalar(135, 255, 210), justBlueColor); //Blue(low, high) - Blue cones
         
 
+    justYellowColor = justYellowColor | justYellowColor2;
+    
     cv::Rect bounding_rect; //z-- Not used atm
     vector<vector<cv::Point>> yellowcontours; // Vector for storing yellow contours
     vector<vector<cv::Point>> bluecontours; // Vector for storing blue contours
     //vector<Vec4i> hierarchy;
     //findContours( justYellowColor, contours, hierarchy, CV_RETR_FLOODFILL, CHAIN_APPROX_SIMPLE );
-    cv::findContours(justBlueColor, yellowcontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    cv::findContours(justYellowColor, bluecontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(justBlueColor, bluecontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(justYellowColor, yellowcontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    
+        /* code */
+       // for (unsigned int i = 0; i < yellowcontours[i].size(); i++)
+       // {
+            //double yellowAreas = contourArea(yellowcontours[i]); //<-- Assertion error
+            
+
+            //if (yellowAreas > 5000)
+            //{
+            /* code */
+           // std::cout << "yellow[" << i << "][0]:" << yellowcontours[i][0] << std::endl; //<-- Causes crash
+           // std::cout << "yellow[" << i << "][1]:" << yellowcontours[i][1] << std::endl;
+
+           // cv::drawContours(img, yellowcontours, -1,  cv::Scalar(0,255,0), 3);
+          //  cv::drawContours(img, other, -1, cv::Scalar(0,255,0), 3);
+
+           // cv::rectangle(img, cv::Point(yellowcontours[i][0], yellowcontours[i][1]), cv::Scalar(0,255,0), 2);
+           // }
+        
+      //  }
+      /*
+            cv::Rect yellow_bounding_rect;
+            cv::Rect blue_bounding_rect;
+            yellow_bounding_rect=cv::boundingRect(yellowcontours);
+            blue_bounding_rect=cv::boundingRect(bluecontours);
+            cv::rectangle(img, yellow_bounding_rect, cv::Scalar(0, 255, 0), 2, 8, 0);
+            cv::rectangle(img, blue_bounding_rect, cv::Scalar(20, 20, 20), 2, 8, 0);
+    */
+
+   
     
    /* for( unsigned int i = 0; i< contours.size(); i++ )
     {         
@@ -168,8 +203,32 @@ int32_t main(int32_t argc, char **argv) {
        // }
         
     }*/
-    cv::drawContours(img, yellowcontours, -1, cv::Scalar(0, 255, 0), 3);
-    cv::drawContours(img, bluecontours, -1, cv::Scalar(0, 255, 0), 3);
+
+   // cv::morphologyEx(img, img, cv::MORPH_CLOSE, yellowcontours);
+    //cv::morphologyEx(img, img, cv::MORPH_CLOSE, bluecontours);
+
+    for (unsigned int i = 0; i < yellowcontours.size(); i++)
+    {
+        cv::Rect boundRectangle = cv::boundingRect(yellowcontours[i]);
+        if (boundRectangle.area() > 80){ //<-- Works, but kinda inconsistent with the cones(fine tuning maybe). Probably something to do with the inRange
+                                            //(detecting parts of cone instead of entire cone/intermittently detects cone).
+        cv::rectangle(img, boundRectangle.tl(), boundRectangle.br(), cv::Scalar(6,82,58), 3); //<-- Dark green rectangles
+        }
+            //Notes for self: Amount of cones of each color, direction(clockwise/counter-clockwise)
+    }
+
+    for (unsigned int i = 0; i < bluecontours.size(); i++)
+    {
+        cv::Rect boundRectangle = cv::boundingRect(bluecontours[i]);
+        if (boundRectangle.area() > 80){ //<-- Works well for blue(maybe finetuning, so that it picks up cones further ahead).
+        cv::rectangle(img, boundRectangle.tl(), boundRectangle.br(), cv::Scalar(0, 255, 0), 3); //<-- Light green rectangles
+        }
+
+    }
+    
+
+   // cv::drawContours(img, yellowcontours, -1, cv::Scalar(0, 255, 0), 3); //<-- TAKE BACK
+   // cv::drawContours(img, bluecontours, -1, cv::Scalar(0, 255, 0), 3);
     //cv::rectangle(img, bounding_rect,  cv::Scalar(0,255,0),2, 8,0);
     cv::imshow( "Original Img", originalImg ); //<--Original Img(not changed)
     cv::imshow("justYellowColor", justYellowColor); //<-- (Just yellow)White if within HSV values, black if not.

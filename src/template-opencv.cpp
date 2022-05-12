@@ -247,8 +247,8 @@ int32_t main(int32_t argc, char **argv) {
     String carDirection;
     if (directionEstablished == false && (boundRectangleBlue.x != 0) && (boundRectangleYellow.x != 0) ){
     if (boundRectangleBlue.x < boundRectangleYellow.x){
-        //blue is left
         carDirection = "Clockwise";
+        directionEstablished = true;
     }
     else if (boundRectangleBlue.x > boundRectangleYellow.x){
         carDirection = "Anti-Clockwise";

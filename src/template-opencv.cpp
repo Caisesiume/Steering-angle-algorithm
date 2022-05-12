@@ -74,6 +74,8 @@ int32_t main(int32_t argc, char **argv) {
 
             od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
 
+            bool directionEstablished = false;
+
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning()) {
                 // OpenCV data structure to hold an image.
@@ -207,25 +209,56 @@ int32_t main(int32_t argc, char **argv) {
    // cv::morphologyEx(img, img, cv::MORPH_CLOSE, yellowcontours);
     //cv::morphologyEx(img, img, cv::MORPH_CLOSE, bluecontours);
 
+    cv::Rect boundRectangleYellow;
+    cv::Rect boundRectangleBlue;
+
+    int amountOfYellowCones = 0;
+    int amountOfBlueCones = 0;
+
     for (unsigned int i = 0; i < yellowcontours.size(); i++)
     {
-        cv::Rect boundRectangle = cv::boundingRect(yellowcontours[i]);
-        if (boundRectangle.area() > 80){ //<-- Works, but kinda inconsistent with the cones(fine tuning maybe). Probably something to do with the inRange
+        boundRectangleYellow = cv::boundingRect(yellowcontours[i]);
+        if (boundRectangleYellow.area() > 80){ //<-- Works, but kinda inconsistent with the cones(fine tuning maybe). Probably something to do with the inRange
                                             //(detecting parts of cone instead of entire cone/intermittently detects cone).
-        cv::rectangle(img, boundRectangle.tl(), boundRectangle.br(), cv::Scalar(6,82,58), 3); //<-- Dark green rectangles
+        cv::rectangle(img, boundRectangleYellow.tl(), boundRectangleYellow.br(), cv::Scalar(6,82,58), 3); //<-- Dark green rectangles
+        if (boundRectangleYellow.area() > 120){
+        std::cout << "Yellow Rectangle(top left x val):" << boundRectangleYellow.x << std::endl;
+        amountOfYellowCones += 1;
+        }
         }
             //Notes for self: Amount of cones of each color, direction(clockwise/counter-clockwise)
     }
 
     for (unsigned int i = 0; i < bluecontours.size(); i++)
     {
-        cv::Rect boundRectangle = cv::boundingRect(bluecontours[i]);
-        if (boundRectangle.area() > 80){ //<-- Works well for blue(maybe finetuning, so that it picks up cones further ahead).
-        cv::rectangle(img, boundRectangle.tl(), boundRectangle.br(), cv::Scalar(0, 255, 0), 3); //<-- Light green rectangles
+        boundRectangleBlue = cv::boundingRect(bluecontours[i]);
+        if (boundRectangleBlue.area() > 80){ //<-- Works well for blue(maybe finetuning, so that it picks up cones further ahead).
+        cv::rectangle(img, boundRectangleBlue.tl(), boundRectangleBlue.br(), cv::Scalar(0, 255, 0), 3); //<-- Light green rectangles
+        if (boundRectangleBlue.area() > 120){
+        std::cout << "Blue Rectangle(top left x val):" << boundRectangleBlue.x << std::endl;
+        amountOfBlueCones += 1;
+            }
         }
 
     }
+    std::cout << "Amount of Yellow Cones" << amountOfYellowCones << std::endl;
+    std::cout << "Amount of Blue Cones" << amountOfBlueCones << std::endl;
+
+    String carDirection;
+    if (directionEstablished == false && (boundRectangleBlue.x != 0) && (boundRectangleYellow.x != 0) ){
+    if (boundRectangleBlue.x < boundRectangleYellow.x){
+        //blue is left
+        carDirection = "Clockwise";
+    }
+    else if (boundRectangleBlue.x > boundRectangleYellow.x){
+        carDirection = "Anti-Clockwise";
+    }
     
+    std::cout << "Car Direction: " << carDirection  << std::endl;
+    directionEstablished = true;
+    }
+
+    //When amount of yellow cones == 0, then we need to turn(we're in a turn).
 
    // cv::drawContours(img, yellowcontours, -1, cv::Scalar(0, 255, 0), 3); //<-- TAKE BACK
    // cv::drawContours(img, bluecontours, -1, cv::Scalar(0, 255, 0), 3);

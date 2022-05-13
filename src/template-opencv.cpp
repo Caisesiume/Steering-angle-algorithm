@@ -25,13 +25,60 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <ctime>
 
-//include due to features changed from highgui.hpp
-/*
-#include "opencv2/imgcodecs.hpp"
-*/
+
+auto calculateSteering(double rightIR, double leftIR, int rightCones, int leftCones, double steering) {
+    double incrementSteering = 0.029088;
+   /* if (steering > 0.2) {
+        steering = steering - (incrementSteering*2);
+        std::cout << "We're steering - increment*2" << std::endl;
+    }
+    else if (steering < -0.2) {
+        steering = steering + (incrementSteering*2);
+        std::cout << "We're steering + increment*2"  << std::endl;
+    }
+    else {
+        steering = 0.00;
+        std::cout << "We're not steering";
+    }*/
+    steering = 0;
+    /*
+    if (rightIR <= 0.007) {
+        steering = steering + (incrementSteering*4);
+        std::cout << "We're steering + increment*4"  << std::endl;
+    }
+    if (leftIR <= 0.007) {
+        steering = steering - (incrementSteering*4);
+        std::cout << "We're steering - increment*4"  << std::endl;
+    }
+    */
+    if(rightCones == 0) {
+        steering = -0.170945;
+        std::cout << "No right cones"  << std::endl;
+    }
+    if(leftCones == 0) {
+        steering = 0.170945;
+        std::cout << "No left cones"  << std::endl;
+    }
+    return steering; 
+}
 
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{1};
+    int yellowCones = 6;
+    int blueCones = 0;
+    double leftIR; 
+    double rightIR;
+    double steering = 0.0;
+    bool directionEstablished = false;
+    std::string carDirection;
+
+
+    //testing variables
+    int right = 0;
+    int wrong = 0;
+    //
+
+
     // Parse the command line parameters as we require the user to specify some mandatory information on startup.
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
     if ( (0 == commandlineArguments.count("cid")) ||
@@ -53,6 +100,10 @@ int32_t main(int32_t argc, char **argv) {
         const uint32_t HEIGHT{static_cast<uint32_t>(std::stoi(commandlineArguments["height"]))};
         const bool VERBOSE{commandlineArguments.count("verbose") != 0};
 
+
+
+
+
         // Attach to the shared memory.
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
         if (sharedMemory && sharedMemory->valid()) {
@@ -63,19 +114,44 @@ int32_t main(int32_t argc, char **argv) {
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             opendlv::proxy::GroundSteeringRequest gsr;
+	    opendlv::proxy::VoltageReading infrared;
+	    std::mutex infraredMutex;	
             std::mutex gsrMutex;
             auto onGroundSteeringRequest = [&gsr, &gsrMutex](cluon::data::Envelope &&env){
                 // The envelope data structure provide further details, such as sampleTimePoint as shown in this test case:
                 // https://github.com/chrberger/libcluon/blob/master/libcluon/testsuites/TestEnvelopeConverter.cpp#L31-L40
                 std::lock_guard<std::mutex> lck(gsrMutex);
                 gsr = cluon::extractMessage<opendlv::proxy::GroundSteeringRequest>(std::move(env));
-                std::cout << "lambda: groundSteering = " << gsr.groundSteering() << std::endl;
+            //    std::cout << "lambda: groundSteering = " << gsr.groundSteering() << std::endl;
             };
-
             od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
+	
 
-            bool directionEstablished = false;
+	///Added Code for infrared
+    
+auto onVoltageReading= [&infrared, &infraredMutex, &rightIR, &leftIR, &yellowCones, &blueCones, &steering](cluon::data::Envelope &&env){
+	std::lock_guard<std::mutex> lck(infraredMutex);
+	infrared= cluon::extractMessage<opendlv::proxy::VoltageReading>(std::move(env));
+//	std::cout << "lambda: volatgeReading, "<< "ID: "<< env.senderStamp()<< " = " << infrared.voltage()<< std::endl;	
+    if(env.senderStamp() == 3) {
+        rightIR = infrared.voltage();
+    } else if (env.senderStamp() == 1) {
+        leftIR = infrared.voltage();
+    }
+    //steering = calculateSteering(rightIR, leftIR, yellowCones, blueCones, steering);
+};
 
+// senderstamp3, lowest == 0.004835165
+// senderstamp1, lowest == 0.005274725
+// maxsteering = +/- 0.290888
+// Minus steering = Right
+// Plus steering = Left
+
+od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
+
+
+
+            
             // Endless loop; end the program by pressing Ctrl-C.
             while (od4.isRunning()) {
                 // OpenCV data structure to hold an image.
@@ -101,12 +177,12 @@ int32_t main(int32_t argc, char **argv) {
                // std::cout << timeVar << std::endl;
 
                 //std::cout << "Current Time: " << (timeNow->tm_year) << '-' << (timeNow->tm_mon +1) << '-' << (timeNow->tm_mday) << ' ' << (timeNow->tm_hour) << ':' << (timeNow->tm_min) << ':' << (timeNow->tm_sec) << std::endl;
-                /*std::pair<bool, cluon::data::TimeStamp > pair = sharedMemory->getTimeStamp();
+                std::pair<bool, cluon::data::TimeStamp > pair = sharedMemory->getTimeStamp();
                     cluon::data::TimeStamp sampleT = pair.second;
                     int64_t tStamp = cluon::time::toMicroseconds(sampleT);
                     std::string ts = std::to_string(tStamp);
                     std::string sampleTimeVar = "Sample Time: " + ts;
-                    std::cout << "Sample Time: " << ts << std::endl;*/ //commented out for performance
+                    //std::cout << "Sample Time: " << ts << std::endl; //commented out for performance
                 sharedMemory->unlock();
 
                 // TODO: Do something with the frame.
@@ -150,7 +226,8 @@ int32_t main(int32_t argc, char **argv) {
     cv::Mat justBlueColor;
     
     inRange(hsvIMG, cv::Scalar(12,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
-    inRange(hsvIMG, cv::Scalar(0,255,255), cv::Scalar(10, 255, 255), justYellowColor2);
+    inRange(hsvIMG, cv::Scalar(2,20,20), cv::Scalar(11, 100, 250), justYellowColor2);//Yellow(low, high) - Yellow cones copy for lower ranges
+    //inRange(hsvIMG, cv::Scalar(0,255,255), cv::Scalar(10, 255, 255), justYellowColor2);
     inRange(hsvIMG, cv::Scalar(80,125,8), cv::Scalar(135, 255, 210), justBlueColor); //Blue(low, high) - Blue cones
         
 
@@ -215,6 +292,19 @@ int32_t main(int32_t argc, char **argv) {
     int amountOfYellowCones = 0;
     int amountOfBlueCones = 0;
 
+    for (unsigned int i = 0; i < bluecontours.size(); i++)
+    {
+        boundRectangleBlue = cv::boundingRect(bluecontours[i]);
+        if (boundRectangleBlue.area() > 80){ //<-- Works well for blue(maybe finetuning, so that it picks up cones further ahead).
+        cv::rectangle(img, boundRectangleBlue.tl(), boundRectangleBlue.br(), cv::Scalar(0, 255, 0), 3); //<-- Light green rectangles
+        if (boundRectangleBlue.area() > 120){ //<-- probably edit at some point
+       // std::cout << "Blue Rectangle(top left x val):" << boundRectangleBlue.x << std::endl;
+        amountOfBlueCones += 1;
+            }
+        }
+
+    }
+
     for (unsigned int i = 0; i < yellowcontours.size(); i++)
     {
         boundRectangleYellow = cv::boundingRect(yellowcontours[i]);
@@ -222,52 +312,53 @@ int32_t main(int32_t argc, char **argv) {
                                             //(detecting parts of cone instead of entire cone/intermittently detects cone).
         cv::rectangle(img, boundRectangleYellow.tl(), boundRectangleYellow.br(), cv::Scalar(6,82,58), 3); //<-- Dark green rectangles
         if (boundRectangleYellow.area() > 120){
-        std::cout << "Yellow Rectangle(top left x val):" << boundRectangleYellow.x << std::endl;
+      //  std::cout << "Yellow Rectangle(top left x val):" << boundRectangleYellow.x << std::endl;
         amountOfYellowCones += 1;
         }
         }
             //Notes for self: Amount of cones of each color, direction(clockwise/counter-clockwise)
     }
 
-    for (unsigned int i = 0; i < bluecontours.size(); i++)
-    {
-        boundRectangleBlue = cv::boundingRect(bluecontours[i]);
-        if (boundRectangleBlue.area() > 80){ //<-- Works well for blue(maybe finetuning, so that it picks up cones further ahead).
-        cv::rectangle(img, boundRectangleBlue.tl(), boundRectangleBlue.br(), cv::Scalar(0, 255, 0), 3); //<-- Light green rectangles
-        if (boundRectangleBlue.area() > 120){
-        std::cout << "Blue Rectangle(top left x val):" << boundRectangleBlue.x << std::endl;
-        amountOfBlueCones += 1;
-            }
-        }
+    
+    std::cout << "Amount of Yellow Cones: " << amountOfYellowCones << std::endl;
+    std::cout << "Amount of Blue Cones: " << amountOfBlueCones << std::endl;
 
-    }
-    std::cout << "Amount of Yellow Cones" << amountOfYellowCones << std::endl;
-    std::cout << "Amount of Blue Cones" << amountOfBlueCones << std::endl;
-
-    String carDirection;
+    
     if (directionEstablished == false && (boundRectangleBlue.x != 0) && (boundRectangleYellow.x != 0) ){
     if (boundRectangleBlue.x < boundRectangleYellow.x){
         carDirection = "Clockwise";
         directionEstablished = true;
     }
     else if (boundRectangleBlue.x > boundRectangleYellow.x){
-        carDirection = "Anti-Clockwise";
+        carDirection = "Counter-Clockwise";
     }
     
     std::cout << "Car Direction: " << carDirection  << std::endl;
     directionEstablished = true;
     }
 
+              
+
     //When amount of yellow cones == 0, then we need to turn(we're in a turn).
 
    // cv::drawContours(img, yellowcontours, -1, cv::Scalar(0, 255, 0), 3); //<-- TAKE BACK
    // cv::drawContours(img, bluecontours, -1, cv::Scalar(0, 255, 0), 3);
     //cv::rectangle(img, bounding_rect,  cv::Scalar(0,255,0),2, 8,0);
+
+            if(carDirection == "Clockwise") {
+                 steering = calculateSteering(rightIR, leftIR,  amountOfBlueCones,  amountOfYellowCones, steering);
+                 std::cout << "Group_02;" << tStamp << ";" << steering << std::endl;
+              }
+              if (carDirection == "Counter-Clockwise"){
+                  steering = calculateSteering(rightIR, leftIR,  amountOfYellowCones,  amountOfBlueCones, steering);
+                  std::cout << "Group_02;" << tStamp << ";" << steering << std::endl;
+              }
+
     cv::imshow( "Original Img", originalImg ); //<--Original Img(not changed)
     cv::imshow("justYellowColor", justYellowColor); //<-- (Just yellow)White if within HSV values, black if not.
     cv::imshow("justBlueColor", justBlueColor); //<-- (Just blue)White if within HSV values, black if not.
     //cv::imshow( "Attempt3", img ); //<-- duplicate of tmp/img
-    //cv::imshow("hsvImg", hsvIMG); //<-- HSV(pink/purple) video feed
+    cv::imshow("hsvImg", hsvIMG); //<-- HSV(pink/purple) video feed
 
 
 
@@ -277,8 +368,23 @@ int32_t main(int32_t argc, char **argv) {
                 // If you want to access the latest received ground steering, don't forget to lock the mutex:
                 {
                     std::lock_guard<std::mutex> lck(gsrMutex);
-                 //   std::cout << "main: groundSteering = " << gsr.groundSteering() << std::endl;
 
+
+
+                    std::cout << "main: groundSteering = " << gsr.groundSteering() << std::endl;
+                    double difference = gsr.groundSteering() - (-1 * steering);
+                    std::cout << "groundSteering-steering: " << difference << std::endl;
+
+                    if ((gsr.groundSteering() - (steering) <= 0.05) && (gsr.groundSteering() - steering >= -0.05)){
+                        right++;
+                    }
+                    else {
+                        wrong++;
+                    }
+                    std::cout << "RIGHT: " << right << std::endl; 
+                    std::cout << "WRONG: " << wrong << std::endl; 
+                    double diff = right / (right + wrong);
+                    std::cout << "Diff: " << diff << std::endl; 
 
                  /* //Maybe useful later on
                     for (size_t i = 0; i < contours.size(); ++i){

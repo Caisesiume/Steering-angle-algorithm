@@ -26,10 +26,9 @@ variables:
   DOCKER_BUILDKIT: 1
   DOCKER_CLI_EXPERIMENTAL: enabled
   BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
-  BUILDX_BUILDER: <your custom builder name>
-  BUILDX_PLATFORM: <your target platforms, e.g. linux/amd64,linux/arm64>
-  TEST_CMD: <some command to run on your image to (smoke-)test whether all is good>
-  IMAGE: registry.gitlab.com/<path to your image>
+  BUILDX_BUILDER: Multiplatform_builder
+  BUILDX_PLATFORM: linux/amd64,linux/arm64,linux/arm/v7
+  IMAGE: registry.git.chalmers.se/courses/dit638/students/2022-group-02
 
 
 services:
@@ -68,7 +67,6 @@ build-and-test:
     
     #New
     - docker buildx build --platform=${BUILDX_PLATFORM} -t ${IMAGE}:${CI_COMMIT_SHA} --push "."
-    - docker run --rm ${IMAGE}:${CI_COMMIT_SHA} ${TEST_CMD}
     - docker tag ${IMAGE}:${CI_COMMIT_SHA} ${IMAGE}:latest
     - docker push ${IMAGE}:latest
 

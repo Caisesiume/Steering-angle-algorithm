@@ -26,10 +26,9 @@ variables:
   DOCKER_BUILDKIT: 1
   DOCKER_CLI_EXPERIMENTAL: enabled
   BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
-  BUILDX_BUILDER: <your custom builder name>
-  BUILDX_PLATFORM: <your target platforms, e.g. linux/amd64,linux/arm64>
-  TEST_CMD: <some command to run on your image to (smoke-)test whether all is good>
-  IMAGE: registry.gitlab.com/<path to your image>
+  BUILDX_BUILDER: Multiplatform_builder
+  BUILDX_PLATFORM: linux/amd64,linux/arm64,linux/arm/v7
+  IMAGE: registry.git.chalmers.se/courses/dit638/students/2022-group-02
 
 
 services:
@@ -44,16 +43,6 @@ stages:
 before_script:
   - docker info
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  #New
-  - mkdir -p $HOME/.docker/cli-plugins/
-  - wget -O $HOME/.docker/cli-plugins/docker-buildx $BUILDX_URL
-  - chmod a+x $HOME/.docker/cli-plugins/docker-buildx
-  - "echo -e '{\n  \"experimental\": \"enabled\"\n}' | tee $HOME/.docker/config.json"
-  - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-  - docker buildx create --use --driver docker-container --name ${BUILDX_BUILDER} --platform=${BUILDX_PLATFORM}
-  - docker buildx inspect --bootstrap ${BUILDX_BUILDER}
-  - docker buildx ls
-  - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
 
 
 # This section describes what shall be done to build and test the project.
@@ -65,12 +54,6 @@ build-and-test:
   stage: build
   script:
     - docker build -f Dockerfile .
-    
-    #New
-    - docker buildx build --platform=${BUILDX_PLATFORM} -t ${IMAGE}:${CI_COMMIT_SHA} --push "."
-    - docker run --rm ${IMAGE}:${CI_COMMIT_SHA} ${TEST_CMD}
-    - docker tag ${IMAGE}:${CI_COMMIT_SHA} ${IMAGE}:latest
-    - docker push ${IMAGE}:latest
 
 
 # This section describes what shall be done to deploy artefacts from the project.
@@ -84,6 +67,21 @@ release:
   tags:
     - docker-build
   stage: deploy
+  before_script:
+  - mkdir -p $HOME/.docker/cli-plugins/
+  - wget -O $HOME/.docker/cli-plugins/docker-buildx $BUILDX_URL
+  - chmod a+x $HOME/.docker/cli-plugins/docker-buildx
+  - "echo -e '{\n  \"experimental\": \"enabled\"\n}' | tee $HOME/.docker/config.json"
+  - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  - docker buildx create --use --driver docker-container --name ${BUILDX_BUILDER} --platform=${BUILDX_PLATFORM}
+  - docker buildx inspect --bootstrap ${BUILDX_BUILDER}
+  - docker buildx ls
+  - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
   script:
     - docker build -f Dockerfile -t "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG" .
     - docker push "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG"
+        
+    #New
+    - docker buildx build --platform=${BUILDX_PLATFORM} -t ${IMAGE}:${CI_COMMIT_SHA} --push "."
+    - docker tag ${IMAGE}:"$CI_COMMIT_TAG" ${IMAGE}:latest
+    - docker push ${IMAGE}:"$CI_COMMIT_TAG"

@@ -26,7 +26,7 @@ variables:
   BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
   BUILDX_BUILDER: Multiplatform_builder
   BUILDX_PLATFORM: linux/amd64,linux/arm64,linux/arm/v7
-  IMAGE: registry.git.chalmers.se/courses/dit638/students/2022-group-02
+  IMAGE: steering-algorithm
 
 
 services:
@@ -77,6 +77,5 @@ release:
   - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
   script:
     - docker buildx build --platform=${BUILDX_PLATFORM} -t ${IMAGE} --push "."
-    - docker images
     - docker tag ${IMAGE} ${IMAGE}:"$CI_COMMIT_TAG"
     - docker push ${IMAGE}:"$CI_COMMIT_TAG"

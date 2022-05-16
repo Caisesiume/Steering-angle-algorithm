@@ -76,6 +76,6 @@ release:
   - docker buildx ls
   - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
   script:
-    - docker buildx build --platform=${BUILDX_PLATFORM} -t ${IMAGE}:${CI_COMMIT_SHA} --push "."
+    - docker buildx build --platform=${BUILDX_PLATFORM} -t ${IMAGE}:"$CI_COMMIT_TAG" --push "."
     - docker tag ${IMAGE}:"$CI_COMMIT_TAG" ${IMAGE}:latest
     - docker push ${IMAGE}:"$CI_COMMIT_TAG"

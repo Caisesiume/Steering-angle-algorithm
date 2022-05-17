@@ -24,10 +24,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <ctime>
+#include <iostream>
+#include <fstream>
 
 
 auto calculateSteering(double rightIR, double leftIR, int rightCones, int leftCones, double steering) {
-    double incrementSteering = 0.029088;
+    double incrementSteering = 0.045;
    /* if (steering > 0.2) {
         steering = steering - (incrementSteering*2);
         std::cout << "We're steering - increment*2" << std::endl;
@@ -41,23 +43,23 @@ auto calculateSteering(double rightIR, double leftIR, int rightCones, int leftCo
         std::cout << "We're not steering";
     }*/
     steering = 0;
-    /*
+    
     if (rightIR <= 0.007) {
-        steering = steering + (incrementSteering*4);
+        steering = steering + incrementSteering;
         std::cout << "We're steering + increment*4"  << std::endl;
     }
     if (leftIR <= 0.007) {
-        steering = steering - (incrementSteering*4);
+        steering = steering - incrementSteering;
         std::cout << "We're steering - increment*4"  << std::endl;
     }
-    */
+    
     if(rightCones == 0) {
-        steering = -0.170945;
-        std::cout << "No right cones"  << std::endl;
+        steering = -0.15;
+      //  std::cout << "No right cones"  << std::endl;
     }
     if(leftCones == 0) {
-        steering = 0.170945;
-        std::cout << "No left cones"  << std::endl;
+        steering = 0.15;
+      //  std::cout << "No left cones"  << std::endl;
     }
     return steering; 
 }
@@ -71,6 +73,32 @@ int32_t main(int32_t argc, char **argv) {
     double steering = 0.0;
     bool directionEstablished = false;
     std::string carDirection;
+    int frames = 0;
+    int steeringFrames = 0;
+    int writtenToFileCounter = 0;
+
+    const char *path = "./steeringsomeFile.csv";
+    //std::ofstream file(path);
+    std::ofstream file(path, std::ios::app);
+    
+
+    //
+    /*
+    std::ifstream infile("home/robinvm/desktop/CyberPhysicalCourse/project/csvfiles/opendlv.proxy.GoundSteeringRequest-0.csv");
+    std::string reader;
+    std::string colVals = getline(infile, reader);
+    for (int i = 0; i < colVals.length; i++)
+    {
+        if (colVals[i] == "groundSteering")
+        {
+            file.push_back(inline, reader); //reader instead of 0
+            file << "steeringWheelAngle";
+        }
+        
+    }
+    */
+    
+    //
 
 
     //testing variables
@@ -184,6 +212,7 @@ od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
                     std::string sampleTimeVar = "Sample Time: " + ts;
                     //std::cout << "Sample Time: " << ts << std::endl; //commented out for performance
                 sharedMemory->unlock();
+                
 
                 // TODO: Do something with the frame.
                 //cv::putText(img, label, Point(20, 20), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(0, 170, 0), 2.0);
@@ -226,7 +255,7 @@ od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
     cv::Mat justBlueColor;
     
     inRange(hsvIMG, cv::Scalar(12,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
-    inRange(hsvIMG, cv::Scalar(2,20,20), cv::Scalar(11, 100, 250), justYellowColor2);//Yellow(low, high) - Yellow cones copy for lower ranges
+    inRange(hsvIMG, cv::Scalar(8,20,20), cv::Scalar(11, 100, 250), justYellowColor2);//Yellow(low, high) - Yellow cones copy for lower ranges
     //inRange(hsvIMG, cv::Scalar(0,255,255), cv::Scalar(10, 255, 255), justYellowColor2);
     inRange(hsvIMG, cv::Scalar(80,125,8), cv::Scalar(135, 255, 210), justBlueColor); //Blue(low, high) - Blue cones
         
@@ -320,8 +349,8 @@ od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
     }
 
     
-    std::cout << "Amount of Yellow Cones: " << amountOfYellowCones << std::endl;
-    std::cout << "Amount of Blue Cones: " << amountOfBlueCones << std::endl;
+   // std::cout << "Amount of Yellow Cones: " << amountOfYellowCones << std::endl;
+   // std::cout << "Amount of Blue Cones: " << amountOfBlueCones << std::endl;
 
     
     if (directionEstablished == false && (boundRectangleBlue.x != 0) && (boundRectangleYellow.x != 0) ){
@@ -346,19 +375,23 @@ od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
     //cv::rectangle(img, bounding_rect,  cv::Scalar(0,255,0),2, 8,0);
 
             if(carDirection == "Clockwise") {
-                 steering = calculateSteering(rightIR, leftIR,  amountOfBlueCones,  amountOfYellowCones, steering);
+                 steering = calculateSteering(rightIR, leftIR,  amountOfYellowCones,  amountOfBlueCones, steering);
                  std::cout << "Group_02;" << tStamp << ";" << steering << std::endl;
+                steeringFrames++;
+                std::cout << "Amount of steering frames:" << steeringFrames << std::endl;
               }
               if (carDirection == "Counter-Clockwise"){
-                  steering = calculateSteering(rightIR, leftIR,  amountOfYellowCones,  amountOfBlueCones, steering);
+                  steering = calculateSteering(rightIR, leftIR,  amountOfBlueCones,  amountOfYellowCones, steering);
                   std::cout << "Group_02;" << tStamp << ";" << steering << std::endl;
+                steeringFrames = 0;
+                std::cout << "Amount of steering frames:" << steeringFrames << std::endl;
               }
 
     cv::imshow( "Original Img", originalImg ); //<--Original Img(not changed)
-    cv::imshow("justYellowColor", justYellowColor); //<-- (Just yellow)White if within HSV values, black if not.
-    cv::imshow("justBlueColor", justBlueColor); //<-- (Just blue)White if within HSV values, black if not.
+   // cv::imshow("justYellowColor", justYellowColor); //<-- (Just yellow)White if within HSV values, black if not.
+   // cv::imshow("justBlueColor", justBlueColor); //<-- (Just blue)White if within HSV values, black if not.
     //cv::imshow( "Attempt3", img ); //<-- duplicate of tmp/img
-    cv::imshow("hsvImg", hsvIMG); //<-- HSV(pink/purple) video feed
+   // cv::imshow("hsvImg", hsvIMG); //<-- HSV(pink/purple) video feed
 
 
 
@@ -371,20 +404,65 @@ od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
 
 
 
-                    std::cout << "main: groundSteering = " << gsr.groundSteering() << std::endl;
-                    double difference = gsr.groundSteering() - (-1 * steering);
-                    std::cout << "groundSteering-steering: " << difference << std::endl;
+                  //  std::cout << "main: groundSteering = " << gsr.groundSteering() << std::endl;
+                    double difference = gsr.groundSteering() - steering;
+                    double range = gsr.groundSteering() / 2;
 
-                    if ((gsr.groundSteering() - (steering) <= 0.05) && (gsr.groundSteering() - steering >= -0.05)){
+
+
+                      
+                    
+
+                    if (gsr.groundSteering() > 0){
+                        if (steering <= (gsr.groundSteering() + range) && steering >= (gsr.groundSteering() - range)){
                         right++;
-                    }
-                    else {
+                        }
+                        else {
                         wrong++;
+                        }
                     }
+                    else if (gsr.groundSteering() < 0){
+                        if (steering >= (gsr.groundSteering() + range) && steering <= (gsr.groundSteering() - range)){
+                        right++;
+                        }
+                        else {
+                        wrong++;
+                        }
+                    }
+                    else if (gsr.groundSteering() == 0 && (steering >= -0.05) && (steering <= 0.05) ){
+                        right++;
+                        }
+
+                  //  std::cout << "groundSteering-steering: " << difference << std::endl;
+
+                    
                     std::cout << "RIGHT: " << right << std::endl; 
                     std::cout << "WRONG: " << wrong << std::endl; 
-                    double diff = right / (right + wrong);
-                    std::cout << "Diff: " << diff << std::endl; 
+                   // double diff = right / (right + wrong);
+                  //  std::cout << "Diff: " << diff << std::endl; 
+
+                    //frames++;
+                    //std::cout << "group_02;" << tStamp << ";" << steering << std::endl;
+                    //std::cout << "Amount of frames:" << frames << std::endl;
+
+                    double dataOurSteering = steering;
+                    double datagsr = gsr.groundSteering();
+
+                    std::cout << "Our Steering: " << dataOurSteering << std::endl;
+                    std::cout << "GSR Steering: " << datagsr << std::endl;
+
+                    std::cout << "Differernce gsr/our: " << difference << std::endl;
+
+                    //file << data << std::endl;
+                    //writtenToFileCounter++;
+                    //std::cout << "Amount of written to file frames:" << writtenToFileCounter << std::endl;
+                    
+                   // outputFile << steering << std::endl;
+
+                    
+
+                    
+                    
 
                  /* //Maybe useful later on
                     for (size_t i = 0; i < contours.size(); ++i){
@@ -400,6 +478,7 @@ od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
                     cv::waitKey(1);
                 }
             }
+           // outputFile.close();
         }
         retCode = 0;
     }

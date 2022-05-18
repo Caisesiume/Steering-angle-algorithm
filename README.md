@@ -11,7 +11,7 @@ Latest release:
 ![version](https://img.shields.io/badge/version-1.1.0-blue)
 
 ## Usage
-The system is ran alongside with [https://github.com/chalmers-revere/opendlv-vehicle-view](opendlv-vehicle-view) and [https://github.com/chalmers-revere/opendlv-video-h264-decoder](h264decoder) (to extract h264 frames into a shared memory area to provide access to ARGB pixels in the frames). By using shared memory, the system is able to detect cones of different color and detemine the heading direction including the needed steering wheel angles for the wheels. 
+The system is ran alongside with [opendlv-vehicle-view](https://github.com/chalmers-revere/opendlv-vehicle-view) and [h264decoder](https://github.com/chalmers-revere/opendlv-video-h264-decoder) (to extract h264 frames into a shared memory area to provide access to ARGB pixels in the frames). By using shared memory, the system is able to detect cones of different color and detemine the heading direction including the needed steering wheel angles for the wheels. 
 
 The algorithm produces an output in the terminal for each video frame containing the sample timestamp together with the calculated steering wheel angle.
 

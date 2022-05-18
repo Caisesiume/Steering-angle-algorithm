@@ -2,7 +2,7 @@
 
 ## Description
 
-This algorithm is data driven and is integrated with [https://github.com/chalmers-revere/opendlv-vehicle-view](opendlv-vehicle-view). The algorithm uses object detection in the data from the video feed from [https://github.com/chalmers-revere/opendlv-vehicle-view](opendlv-vehicle-view) along side with other sensor readings to compute an accurate steering angle output close to what the actual steering wheel angle was at the time of the video feed.
+This algorithm is data driven and is integrated with [opendlv-vehicle-view](https://github.com/chalmers-revere/opendlv-vehicle-view). The algorithm uses object detection in the data from the video feed from [opendlv-vehicle-view](https://github.com/chalmers-revere/opendlv-vehicle-view) along side with other sensor readings to compute an accurate steering angle output close to what the actual steering wheel angle was at the time of the video feed.
 
 
 ## Installation

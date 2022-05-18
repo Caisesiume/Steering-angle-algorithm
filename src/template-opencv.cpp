@@ -17,7 +17,7 @@
 
 // Include the single-file, header-only middleware libcluon to create high-performance microservices
 #include "cluon-complete.hpp"
-// Include the OpenDLV Standard Message Set that contains messages that are usually exchanged for automotive or robotic applications 
+// Include the OpenDLV Standard Message Set that contains messages that are usually exchanged for automotive or robotic applications
 #include "opendlv-standard-message-set.hpp"
 
 // Include the GUI and image processing header files from OpenCV
@@ -27,92 +27,53 @@
 #include <iostream>
 #include <fstream>
 
-
-auto calculateSteering(double rightIR, double leftIR, int rightCones, int leftCones, double steering) {
+auto calculateSteering(double rightIR, double leftIR, int rightCones, int leftCones, double steering)
+{
     double incrementSteering = 0.045;
-   /* if (steering > 0.2) {
-        steering = steering - (incrementSteering*2);
-        std::cout << "We're steering - increment*2" << std::endl;
-    }
-    else if (steering < -0.2) {
-        steering = steering + (incrementSteering*2);
-        std::cout << "We're steering + increment*2"  << std::endl;
-    }
-    else {
-        steering = 0.00;
-        std::cout << "We're not steering";
-    }*/
     steering = 0;
-    
-    if (rightIR <= 0.007) {
+
+    if (rightIR <= 0.007)
+    {
         steering = steering + incrementSteering;
-        std::cout << "We're steering + increment*4"  << std::endl;
     }
-    if (leftIR <= 0.007) {
+    if (leftIR <= 0.007)
+    {
         steering = steering - incrementSteering;
-        std::cout << "We're steering - increment*4"  << std::endl;
     }
-    
-    if(rightCones == 0) {
+
+    if (rightCones == 0)
+    {
         steering = -0.15;
-      //  std::cout << "No right cones"  << std::endl;
     }
-    if(leftCones == 0) {
+    if (leftCones == 0)
+    {
         steering = 0.15;
-      //  std::cout << "No left cones"  << std::endl;
     }
-    return steering; 
+    return steering;
 }
 
-int32_t main(int32_t argc, char **argv) {
+int32_t main(int32_t argc, char **argv)
+{
     int32_t retCode{1};
     int yellowCones = 6;
     int blueCones = 0;
-    double leftIR; 
+    double leftIR;
     double rightIR;
     double steering = 0.0;
-    bool directionEstablished = false;
+    int directionEstablished = 0;
     std::string carDirection;
-    int frames = 0;
-    int steeringFrames = 0;
-    int writtenToFileCounter = 0;
+    int numberClockwise = 0;
+    int numberCounterclockwise = 0;
 
-    const char *path = "./steeringsomeFile.csv";
-    //std::ofstream file(path);
-    std::ofstream file(path, std::ios::app);
     
-
-    //
-    /*
-    std::ifstream infile("home/robinvm/desktop/CyberPhysicalCourse/project/csvfiles/opendlv.proxy.GoundSteeringRequest-0.csv");
-    std::string reader;
-    std::string colVals = getline(infile, reader);
-    for (int i = 0; i < colVals.length; i++)
-    {
-        if (colVals[i] == "groundSteering")
-        {
-            file.push_back(inline, reader); //reader instead of 0
-            file << "steeringWheelAngle";
-        }
-        
-    }
-    */
-    
-    //
-
-
-    //testing variables
-    int right = 0;
-    int wrong = 0;
-    //
-
 
     // Parse the command line parameters as we require the user to specify some mandatory information on startup.
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if ( (0 == commandlineArguments.count("cid")) ||
-         (0 == commandlineArguments.count("name")) ||
-         (0 == commandlineArguments.count("width")) ||
-         (0 == commandlineArguments.count("height")) ) {
+    if ((0 == commandlineArguments.count("cid")) ||
+        (0 == commandlineArguments.count("name")) ||
+        (0 == commandlineArguments.count("width")) ||
+        (0 == commandlineArguments.count("height")))
+    {
         std::cerr << argv[0] << " attaches to a shared memory area containing an ARGB image." << std::endl;
         std::cerr << "Usage:   " << argv[0] << " --cid=<OD4 session> --name=<name of shared memory area> [--verbose]" << std::endl;
         std::cerr << "         --cid:    CID of the OD4Session to send and receive messages" << std::endl;
@@ -121,20 +82,18 @@ int32_t main(int32_t argc, char **argv) {
         std::cerr << "         --height: height of the frame" << std::endl;
         std::cerr << "Example: " << argv[0] << " --cid=253 --name=img --width=640 --height=480 --verbose" << std::endl;
     }
-    else {
+    else
+    {
         // Extract the values from the command line parameters
         const std::string NAME{commandlineArguments["name"]};
         const uint32_t WIDTH{static_cast<uint32_t>(std::stoi(commandlineArguments["width"]))};
         const uint32_t HEIGHT{static_cast<uint32_t>(std::stoi(commandlineArguments["height"]))};
         const bool VERBOSE{commandlineArguments.count("verbose") != 0};
 
-
-
-
-
         // Attach to the shared memory.
         std::unique_ptr<cluon::SharedMemory> sharedMemory{new cluon::SharedMemory{NAME}};
-        if (sharedMemory && sharedMemory->valid()) {
+        if (sharedMemory && sharedMemory->valid())
+        {
             std::clog << argv[0] << ": Attached to shared memory '" << sharedMemory->name() << " (" << sharedMemory->size() << " bytes)." << std::endl;
 
             // Interface to a running OpenDaVINCI session where network messages are exchanged.
@@ -142,46 +101,39 @@ int32_t main(int32_t argc, char **argv) {
             cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
             opendlv::proxy::GroundSteeringRequest gsr;
-	    opendlv::proxy::VoltageReading infrared;
-	    std::mutex infraredMutex;	
+            opendlv::proxy::VoltageReading infrared;
+            std::mutex infraredMutex;
             std::mutex gsrMutex;
-            auto onGroundSteeringRequest = [&gsr, &gsrMutex](cluon::data::Envelope &&env){
+            auto onGroundSteeringRequest = [&gsr, &gsrMutex](cluon::data::Envelope &&env)
+            {
                 // The envelope data structure provide further details, such as sampleTimePoint as shown in this test case:
                 // https://github.com/chrberger/libcluon/blob/master/libcluon/testsuites/TestEnvelopeConverter.cpp#L31-L40
                 std::lock_guard<std::mutex> lck(gsrMutex);
                 gsr = cluon::extractMessage<opendlv::proxy::GroundSteeringRequest>(std::move(env));
-            //    std::cout << "lambda: groundSteering = " << gsr.groundSteering() << std::endl;
             };
             od4.dataTrigger(opendlv::proxy::GroundSteeringRequest::ID(), onGroundSteeringRequest);
-	
 
-	///Added Code for infrared
-    
-auto onVoltageReading= [&infrared, &infraredMutex, &rightIR, &leftIR, &yellowCones, &blueCones, &steering](cluon::data::Envelope &&env){
-	std::lock_guard<std::mutex> lck(infraredMutex);
-	infrared= cluon::extractMessage<opendlv::proxy::VoltageReading>(std::move(env));
-//	std::cout << "lambda: volatgeReading, "<< "ID: "<< env.senderStamp()<< " = " << infrared.voltage()<< std::endl;	
-    if(env.senderStamp() == 3) {
-        rightIR = infrared.voltage();
-    } else if (env.senderStamp() == 1) {
-        leftIR = infrared.voltage();
-    }
-    //steering = calculateSteering(rightIR, leftIR, yellowCones, blueCones, steering);
-};
+            ///Infrared sensor
 
-// senderstamp3, lowest == 0.004835165
-// senderstamp1, lowest == 0.005274725
-// maxsteering = +/- 0.290888
-// Minus steering = Right
-// Plus steering = Left
+            auto onVoltageReading = [&infrared, &infraredMutex, &rightIR, &leftIR, &yellowCones, &blueCones, &steering](cluon::data::Envelope &&env)
+            {
+                std::lock_guard<std::mutex> lck(infraredMutex);
+                infrared = cluon::extractMessage<opendlv::proxy::VoltageReading>(std::move(env));
+                if (env.senderStamp() == 3)
+                {
+                    rightIR = infrared.voltage();
+                }
+                else if (env.senderStamp() == 1)
+                {
+                    leftIR = infrared.voltage();
+                }
+            };
 
-od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
+            od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
 
-
-
-            
             // Endless loop; end the program by pressing Ctrl-C.
-            while (od4.isRunning()) {
+            while (od4.isRunning())
+            {
                 // OpenCV data structure to hold an image.
                 cv::Mat img;
 
@@ -195,293 +147,158 @@ od4.dataTrigger(opendlv::proxy::VoltageReading::ID(), onVoltageReading);
                     cv::Mat wrapped(HEIGHT, WIDTH, CV_8UC4, sharedMemory->data());
                     img = wrapped.clone();
                 }
-                // TODO: Here, you can add some code to check the sampleTimePoint when the current frame was captured.
-                //std::time_t currentTime = std::time(0);
-                //std::tm* timeNow = std::localtime(&currentTime);
                 
-                //std::string timeVar = "Current Time: "+std::to_string(timeNow->tm_year +1900)+'-'+std::to_string(timeNow->tm_mon +1)+'-'+std::to_string(timeNow->tm_mday)+'T'+std::to_string(timeNow->tm_hour)+':'+std::to_string(timeNow->tm_min)+':'+std::to_string(timeNow->tm_sec)+'Z';
-                //std::string dateVar = std::to_string(timeNow->tm_year) + '-' + std::to_string(timeNow->tm_mon) + '-' + std::to_string(timeNow->tm_mday);
-
-               // std::cout << timeVar << std::endl;
-
-                //std::cout << "Current Time: " << (timeNow->tm_year) << '-' << (timeNow->tm_mon +1) << '-' << (timeNow->tm_mday) << ' ' << (timeNow->tm_hour) << ':' << (timeNow->tm_min) << ':' << (timeNow->tm_sec) << std::endl;
-                std::pair<bool, cluon::data::TimeStamp > pair = sharedMemory->getTimeStamp();
-                    cluon::data::TimeStamp sampleT = pair.second;
-                    int64_t tStamp = cluon::time::toMicroseconds(sampleT);
-                    std::string ts = std::to_string(tStamp);
-                    std::string sampleTimeVar = "Sample Time: " + ts;
-                    //std::cout << "Sample Time: " << ts << std::endl; //commented out for performance
+                std::pair<bool, cluon::data::TimeStamp> pair = sharedMemory->getTimeStamp();
+                cluon::data::TimeStamp sampleT = pair.second;
+                int64_t tStamp = cluon::time::toMicroseconds(sampleT);
+                std::string ts = std::to_string(tStamp);
+                std::string sampleTimeVar = "Sample Time: " + ts;
                 sharedMemory->unlock();
-                
-
-                // TODO: Do something with the frame.
-                //cv::putText(img, label, Point(20, 20), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(0, 170, 0), 2.0);
-               // cv::putTest(img, ("Current Time: " + (timeNow->tm_year) + '-' + (timeNow->tm_mon +1) + '-' + (timeNow->tm_mday) + ' ' + (timeNow->tm_hour) + ':' + (timeNow->tm_min) + ':' + (timeNow->tm_sec), (10, 100), FONT_HERSHEY_PLAIN,1, (210, 155, 155), 4, cv::LINE_8));
-
-               // cv::putText(img, timeVar, cv::Point(20,10), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
-               // cv::putText(img, sampleTimeVar, cv::Point(20, 50), cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 200, 190)); 
-                
-                
-                
-                
-                //HSV values reference: https://www.codespeedy.com/splitting-rgb-and-hsv-values-in-an-image-using-opencv-python/
-                //Solution partly inspired by: https://stackoverflow.com/questions/9018906/detect-rgb-color-interval-with-opencv-and-c
-                //AND: https://solarianprogrammer.com/2015/05/08/detect-red-circles-image-using-opencv/
 
                 
-                //Cone color detection
-                
+
+                // HSV values reference: https://www.codespeedy.com/splitting-rgb-and-hsv-values-in-an-image-using-opencv-python/
+                // Solution partly inspired by: https://stackoverflow.com/questions/9018906/detect-rgb-color-interval-with-opencv-and-c
+                // AND: https://solarianprogrammer.com/2015/05/08/detect-red-circles-image-using-opencv/
+
+                // Cone color detection
+
                 using namespace cv;
                 using namespace std;
-                
-    
-    cv::Mat originalImg;
-    img.copyTo(originalImg);
 
-    cv::Mat hsvIMG;
-    img.copyTo(hsvIMG);
+                cv::Mat originalImg;
+                img.copyTo(originalImg);
 
+                cv::Mat hsvIMG;
+                img.copyTo(hsvIMG);
 
-    //Draw box around unnecessary part of car(to avoid conflicts with inrange below)
-        cv::rectangle(img, cv::Point(150, 385), cv::Point(500, 500), cv::Scalar(0,0,0), CV_FILLED);
-    //Draw box in region above cones, to avoid conflicts with irrelevant objects.
-        cv::rectangle(img, cv::Point(0,0), cv::Point(650, 250), cv::Scalar(0,0,0), CV_FILLED);
-    
+                // Draw box around unnecessary part of car(to avoid conflicts with inrange below)
+                cv::rectangle(img, cv::Point(150, 385), cv::Point(500, 500), cv::Scalar(0, 0, 0), CV_FILLED);
+                // Draw box in region above cones, to avoid conflicts with irrelevant objects.
+                cv::rectangle(img, cv::Point(0, 0), cv::Point(650, 250), cv::Scalar(0, 0, 0), CV_FILLED);
 
-    cv::cvtColor(img, hsvIMG, cv::COLOR_BGR2HSV);
+                cv::cvtColor(img, hsvIMG, cv::COLOR_BGR2HSV);
 
-    cv::Mat justYellowColor;
-    cv::Mat justYellowColor2;
-    cv::Mat justBlueColor;
-    
-    inRange(hsvIMG, cv::Scalar(12,20,20), cv::Scalar(70, 100, 250), justYellowColor);//Yellow(low, high) - Yellow cones
-    inRange(hsvIMG, cv::Scalar(8,20,20), cv::Scalar(11, 100, 250), justYellowColor2);//Yellow(low, high) - Yellow cones copy for lower ranges
-    //inRange(hsvIMG, cv::Scalar(0,255,255), cv::Scalar(10, 255, 255), justYellowColor2);
-    inRange(hsvIMG, cv::Scalar(80,125,8), cv::Scalar(135, 255, 210), justBlueColor); //Blue(low, high) - Blue cones
-        
+                cv::Mat justYellowColor;
+                cv::Mat justYellowColor2;
+                cv::Mat justBlueColor;
 
-    justYellowColor = justYellowColor | justYellowColor2;
-    
-    cv::Rect bounding_rect; //z-- Not used atm
-    vector<vector<cv::Point>> yellowcontours; // Vector for storing yellow contours
-    vector<vector<cv::Point>> bluecontours; // Vector for storing blue contours
-    //vector<Vec4i> hierarchy;
-    //findContours( justYellowColor, contours, hierarchy, CV_RETR_FLOODFILL, CHAIN_APPROX_SIMPLE );
-    cv::findContours(justBlueColor, bluecontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    cv::findContours(justYellowColor, yellowcontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+                inRange(hsvIMG, cv::Scalar(12, 20, 20), cv::Scalar(70, 100, 250), justYellowColor); // Yellow(low, high) - Yellow cones
+                inRange(hsvIMG, cv::Scalar(8, 20, 20), cv::Scalar(11, 100, 250), justYellowColor2); // Yellow(low, high) - Yellow cones copy for lower ranges
+                inRange(hsvIMG, cv::Scalar(80, 125, 8), cv::Scalar(135, 255, 210), justBlueColor); // Blue(low, high) - Blue cones
 
-    
-        /* code */
-       // for (unsigned int i = 0; i < yellowcontours[i].size(); i++)
-       // {
-            //double yellowAreas = contourArea(yellowcontours[i]); //<-- Assertion error
-            
+                justYellowColor = justYellowColor | justYellowColor2;
 
-            //if (yellowAreas > 5000)
-            //{
-            /* code */
-           // std::cout << "yellow[" << i << "][0]:" << yellowcontours[i][0] << std::endl; //<-- Causes crash
-           // std::cout << "yellow[" << i << "][1]:" << yellowcontours[i][1] << std::endl;
+                cv::Rect bounding_rect;                   
+                vector<vector<cv::Point>> yellowcontours; // Vector for storing yellow contours
+                vector<vector<cv::Point>> bluecontours;   // Vector for storing blue contours
+                cv::findContours(justBlueColor, bluecontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+                cv::findContours(justYellowColor, yellowcontours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-           // cv::drawContours(img, yellowcontours, -1,  cv::Scalar(0,255,0), 3);
-          //  cv::drawContours(img, other, -1, cv::Scalar(0,255,0), 3);
+             
 
-           // cv::rectangle(img, cv::Point(yellowcontours[i][0], yellowcontours[i][1]), cv::Scalar(0,255,0), 2);
-           // }
-        
-      //  }
-      /*
-            cv::Rect yellow_bounding_rect;
-            cv::Rect blue_bounding_rect;
-            yellow_bounding_rect=cv::boundingRect(yellowcontours);
-            blue_bounding_rect=cv::boundingRect(bluecontours);
-            cv::rectangle(img, yellow_bounding_rect, cv::Scalar(0, 255, 0), 2, 8, 0);
-            cv::rectangle(img, blue_bounding_rect, cv::Scalar(20, 20, 20), 2, 8, 0);
-    */
+                cv::Rect boundRectangleYellow;
+                cv::Rect boundRectangleBlue;
 
-   
-    
-   /* for( unsigned int i = 0; i< contours.size(); i++ )
-    {         
-       // double area = contourArea(contours[i]); //z-- idk if works, test later
-       // if (area > 0) {
-            // Find the bounding rectangle for biggest contour
-            bounding_rect=cv::boundingRect(yellowcontours[i]);
-            bounding_rect=cv::boundingRect(bluecontours[i]);
-       // }
-        
-    }*/
+                cv::Rect largestboundRectangleBlue;
+                cv::Rect largestboundRectangleYellow;
 
-   // cv::morphologyEx(img, img, cv::MORPH_CLOSE, yellowcontours);
-    //cv::morphologyEx(img, img, cv::MORPH_CLOSE, bluecontours);
+                int amountOfYellowCones = 0;
+                int amountOfBlueCones = 0;
 
-    cv::Rect boundRectangleYellow;
-    cv::Rect boundRectangleBlue;
+                int largestAreaYellow = 0;
+                int largestAreaBlue = 0;
 
-    int amountOfYellowCones = 0;
-    int amountOfBlueCones = 0;
+                for (unsigned int i = 0; i < bluecontours.size(); i++)
+                {
+                    boundRectangleBlue = cv::boundingRect(bluecontours[i]);
+                    if (boundRectangleBlue.area() > 80)
+                    {                                                                                                   
+                        cv::rectangle(img, boundRectangleBlue.tl(), boundRectangleBlue.br(), cv::Scalar(0, 255, 0), 3); //<-- Light green rectangles
 
-    for (unsigned int i = 0; i < bluecontours.size(); i++)
-    {
-        boundRectangleBlue = cv::boundingRect(bluecontours[i]);
-        if (boundRectangleBlue.area() > 80){ //<-- Works well for blue(maybe finetuning, so that it picks up cones further ahead).
-        cv::rectangle(img, boundRectangleBlue.tl(), boundRectangleBlue.br(), cv::Scalar(0, 255, 0), 3); //<-- Light green rectangles
-        if (boundRectangleBlue.area() > 120){ //<-- probably edit at some point
-       // std::cout << "Blue Rectangle(top left x val):" << boundRectangleBlue.x << std::endl;
-        amountOfBlueCones += 1;
-            }
-        }
+                        if (boundRectangleBlue.area() > largestAreaBlue)
+                        {
+                            largestAreaBlue = boundRectangleBlue.area();
+                            largestboundRectangleBlue = cv::boundingRect(bluecontours[i]);
+                        }
 
-    }
+                        if (boundRectangleBlue.area() > 120)
+                        {   
+                            amountOfBlueCones += 1;
+                        }
+                    }
+                }
 
-    for (unsigned int i = 0; i < yellowcontours.size(); i++)
-    {
-        boundRectangleYellow = cv::boundingRect(yellowcontours[i]);
-        if (boundRectangleYellow.area() > 80){ //<-- Works, but kinda inconsistent with the cones(fine tuning maybe). Probably something to do with the inRange
-                                            //(detecting parts of cone instead of entire cone/intermittently detects cone).
-        cv::rectangle(img, boundRectangleYellow.tl(), boundRectangleYellow.br(), cv::Scalar(6,82,58), 3); //<-- Dark green rectangles
-        if (boundRectangleYellow.area() > 120){
-      //  std::cout << "Yellow Rectangle(top left x val):" << boundRectangleYellow.x << std::endl;
-        amountOfYellowCones += 1;
-        }
-        }
-            //Notes for self: Amount of cones of each color, direction(clockwise/counter-clockwise)
-    }
+                for (unsigned int i = 0; i < yellowcontours.size(); i++)
+                {
+                    boundRectangleYellow = cv::boundingRect(yellowcontours[i]);
+                    if (boundRectangleYellow.area() > 80)
+                    {                                                                                                       
+                                                                                                                            
+                        cv::rectangle(img, boundRectangleYellow.tl(), boundRectangleYellow.br(), cv::Scalar(6, 82, 58), 3); //<-- Dark green rectangles
 
-    
-   // std::cout << "Amount of Yellow Cones: " << amountOfYellowCones << std::endl;
-   // std::cout << "Amount of Blue Cones: " << amountOfBlueCones << std::endl;
+                        if (boundRectangleYellow.area() > largestAreaYellow)
+                        {
+                            largestAreaYellow = boundRectangleYellow.area();
+                            largestboundRectangleYellow = cv::boundingRect(yellowcontours[i]);
+                        }
 
-    
-    if (directionEstablished == false && (boundRectangleBlue.x != 0) && (boundRectangleYellow.x != 0) ){
-    if (boundRectangleBlue.x < boundRectangleYellow.x){
-        carDirection = "Clockwise";
-        directionEstablished = true;
-    }
-    else if (boundRectangleBlue.x > boundRectangleYellow.x){
-        carDirection = "Counter-Clockwise";
-    }
-    
-    std::cout << "Car Direction: " << carDirection  << std::endl;
-    directionEstablished = true;
-    }
+                        if (boundRectangleYellow.area() > 120)
+                        {
+                            amountOfYellowCones += 1;
+                        }
+                    }
+                }
 
-              
+                if (directionEstablished < 10 && (largestboundRectangleBlue.x != 0) && (boundRectangleYellow.x != 0))
+                {
+                    if (largestboundRectangleBlue.x < largestboundRectangleYellow.x)
+                    {
+                        numberClockwise++;
+                    }
+                    else if (largestboundRectangleBlue.x > largestboundRectangleYellow.x)
+                    {
+                        numberCounterclockwise++;
+                    }
 
-    //When amount of yellow cones == 0, then we need to turn(we're in a turn).
+                    if (numberClockwise > numberCounterclockwise)
+                    {
+                        carDirection = "Clockwise";
+                    }
+                    else if (numberCounterclockwise > numberClockwise)
+                    {
+                        carDirection = "Counter-Clockwise";
+                    }
 
-   // cv::drawContours(img, yellowcontours, -1, cv::Scalar(0, 255, 0), 3); //<-- TAKE BACK
-   // cv::drawContours(img, bluecontours, -1, cv::Scalar(0, 255, 0), 3);
-    //cv::rectangle(img, bounding_rect,  cv::Scalar(0,255,0),2, 8,0);
+                    directionEstablished++;
+                }
 
-            if(carDirection == "Clockwise") {
-                 steering = calculateSteering(rightIR, leftIR,  amountOfYellowCones,  amountOfBlueCones, steering);
-                 std::cout << "Group_02;" << tStamp << ";" << steering << std::endl;
-                steeringFrames++;
-                std::cout << "Amount of steering frames:" << steeringFrames << std::endl;
-              }
-              if (carDirection == "Counter-Clockwise"){
-                  steering = calculateSteering(rightIR, leftIR,  amountOfBlueCones,  amountOfYellowCones, steering);
-                  std::cout << "Group_02;" << tStamp << ";" << steering << std::endl;
-                steeringFrames = 0;
-                std::cout << "Amount of steering frames:" << steeringFrames << std::endl;
-              }
+                if (carDirection == "Clockwise")
+                {
+                    steering = calculateSteering(rightIR, leftIR, amountOfYellowCones, amountOfBlueCones, steering);
+                }
+                if (carDirection == "Counter-Clockwise")
+                {
+                    steering = calculateSteering(rightIR, leftIR, amountOfBlueCones, amountOfYellowCones, steering);
+                }
+                std::cout << "Group_02;" << tStamp << ";" << steering << std::endl;
 
-    cv::imshow( "Original Img", originalImg ); //<--Original Img(not changed)
-   // cv::imshow("justYellowColor", justYellowColor); //<-- (Just yellow)White if within HSV values, black if not.
-   // cv::imshow("justBlueColor", justBlueColor); //<-- (Just blue)White if within HSV values, black if not.
-    //cv::imshow( "Attempt3", img ); //<-- duplicate of tmp/img
-   // cv::imshow("hsvImg", hsvIMG); //<-- HSV(pink/purple) video feed
+                cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0, 0, 255));
 
-
-
-                // Example: Draw a red rectangle and display image.
-                cv::rectangle(img, cv::Point(50, 50), cv::Point(100, 100), cv::Scalar(0,0,255));
-
-                // If you want to access the latest received ground steering, don't forget to lock the mutex:
                 {
                     std::lock_guard<std::mutex> lck(gsrMutex);
 
-
-
-                  //  std::cout << "main: groundSteering = " << gsr.groundSteering() << std::endl;
-                    double difference = gsr.groundSteering() - steering;
-                    double range = gsr.groundSteering() / 2;
-
-
-
-                      
-                    
-
-                    if (gsr.groundSteering() > 0){
-                        if (steering <= (gsr.groundSteering() + range) && steering >= (gsr.groundSteering() - range)){
-                        right++;
-                        }
-                        else {
-                        wrong++;
-                        }
-                    }
-                    else if (gsr.groundSteering() < 0){
-                        if (steering >= (gsr.groundSteering() + range) && steering <= (gsr.groundSteering() - range)){
-                        right++;
-                        }
-                        else {
-                        wrong++;
-                        }
-                    }
-                    else if (gsr.groundSteering() == 0 && (steering >= -0.05) && (steering <= 0.05) ){
-                        right++;
-                        }
-
-                  //  std::cout << "groundSteering-steering: " << difference << std::endl;
-
-                    
-                    std::cout << "RIGHT: " << right << std::endl; 
-                    std::cout << "WRONG: " << wrong << std::endl; 
-                   // double diff = right / (right + wrong);
-                  //  std::cout << "Diff: " << diff << std::endl; 
-
-                    //frames++;
-                    //std::cout << "group_02;" << tStamp << ";" << steering << std::endl;
-                    //std::cout << "Amount of frames:" << frames << std::endl;
-
-                    double dataOurSteering = steering;
-                    double datagsr = gsr.groundSteering();
-
-                    std::cout << "Our Steering: " << dataOurSteering << std::endl;
-                    std::cout << "GSR Steering: " << datagsr << std::endl;
-
-                    std::cout << "Differernce gsr/our: " << difference << std::endl;
-
-                    //file << data << std::endl;
-                    //writtenToFileCounter++;
-                    //std::cout << "Amount of written to file frames:" << writtenToFileCounter << std::endl;
-                    
-                   // outputFile << steering << std::endl;
-
-                    
-
-                    
-                    
-
-                 /* //Maybe useful later on
-                    for (size_t i = 0; i < contours.size(); ++i){
-                    cv::Rect boundRect = cv::boundingRect(contours[i]);
-                    cv::rectangle(img, boundRect.tl(), boundRect.br(), (0,0,0), 3);
-                }
-                 */
                 }
 
-                // Display image on your screen.
-                if (VERBOSE) {
+
+                if (VERBOSE)
+                {
                     cv::imshow(sharedMemory->name().c_str(), img);
                     cv::waitKey(1);
                 }
             }
-           // outputFile.close();
         }
         retCode = 0;
     }
     return retCode;
 }
-

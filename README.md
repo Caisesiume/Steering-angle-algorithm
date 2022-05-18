@@ -1,24 +1,19 @@
-# 2022-group-02 | Project Name
+# 2022-group-02 | Algorithm for steering wheel angle
 
 ## Description
 
-Description here.
+This algorithm is data driven and is integrated with [https://github.com/chalmers-revere/opendlv-vehicle-view](opendlv-vehicle-view). The algorithm uses object detection in the data from the video feed from [https://github.com/chalmers-revere/opendlv-vehicle-view](opendlv-vehicle-view) along side with other sensor readings to compute an accurate steering angle output close to what the actual steering wheel angle was at the time of the video feed.
 
-## Visuals
-To be added.
 
-`"Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method."
-`
 ## Installation
-To be added.
+Latest release: 
 
-`"Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection."
-`
+![version](https://img.shields.io/badge/version-1.1.0-blue)
+
 ## Usage
-The system will be able to detect cones and detemine needed steering for the wheels. 
+The system is ran alongside with [https://github.com/chalmers-revere/opendlv-vehicle-view](opendlv-vehicle-view) and [https://github.com/chalmers-revere/opendlv-video-h264-decoder](h264decoder) (to extract h264 frames into a shared memory area to provide access to ARGB pixels in the frames). By using shared memory, the system is able to detect cones of different color and detemine the heading direction including the needed steering wheel angles for the wheels. 
 
-## Roadmap
-Our roadmap is somewhat described by the planned tasks we have documented on our [Trello board](https://trello.com/b/qO0KZTiw/dit638-project-group-02).
+The algorithm produces an output in the terminal for each video frame containing the sample timestamp together with the calculated steering wheel angle.
 
 
 ## Authors and acknowledgment
@@ -36,7 +31,7 @@ Our roadmap is somewhat described by the planned tasks we have documented on our
 
 **Acknowledgment:**
 
-Thanks to GU and Christian Berger for setting up this project possiblility
+Thanks to University of Gothenburg, Chalmers University of Technology and Christian Berger for setting up this project possiblility.
 
 
 ## License
@@ -45,30 +40,10 @@ For this project a [MIT License](https://git.chalmers.se/courses/dit638/students
 ## Project status
 The current project state:
 
-The project development is in its starting phase. The near future will bring a lot of new code and updates to this repository.
+The project development is in its ending phase. There might only be occational updates to this repository.
 
-# Useful content for futute references
 
-## Collaborate with your team
+## Collaboration with the team members
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+See Code-of-Conduct.
 
-***
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
